@@ -1,0 +1,46 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.8'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run model validation
+        run: |
+          python -c "import src.model; model = src.model.SimpleMNISTNet(); print(model)"
+
+      - name: Train the model
+        run: |
+          python src/train.py
+
+      - name: Save model with timestamp
+        run: |
+          TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
+          mv src/model.py src/model_${TIMESTAMP}.py
+
+      - name: Upload model artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: model-artifacts
+          path: src/model_*.py
